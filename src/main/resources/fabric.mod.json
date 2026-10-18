@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "tutorialmod",
+  "version": "${version}",
+  "name": "Tutorial Mod",
+  "description": "Stap-voor-stap Minecraft bouwtutorials met transparante ghost blocks, blokcontrole, voortgangsbalk en multiplayer.",
+  "authors": [
+    "N Maats"
+  ],
+  "contact": {},
+  "license": "CC0-1.0",
+  "icon": "assets/tutorialmod/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.maats.tutorialmod.TutorialMod"
+    ],
+    "client": [
+      "com.maats.tutorialmod.client.TutorialModClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
