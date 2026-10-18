@@ -34,11 +34,13 @@ public class TutorialCommands {
                                         .then(Commands.argument("naam",
                                                 com.mojang.brigadier.arguments.StringArgumentType.word())
                                                 .executes(ctx -> makeStep(ctx)))))
-                        .then(Commands.argument("x", IntegerArgumentType.integer())
+                        .then(Commands.argument("naam",
+                                com.mojang.brigadier.arguments.StringArgumentType.word())
+                                .then(Commands.argument("x", IntegerArgumentType.integer())
                                 .then(Commands.argument("z", IntegerArgumentType.integer())
                                         .then(Commands.argument("grondDiepte", IntegerArgumentType.integer(1))
                                                 .then(Commands.argument("luchtHoogte", IntegerArgumentType.integer(1, 256))
-                                                        .executes(ctx -> makeTutorial(ctx)))))))
+                                                        .executes(ctx -> makeTutorial(ctx))))))))
 
                 .then(Commands.literal("edit")
                         .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
