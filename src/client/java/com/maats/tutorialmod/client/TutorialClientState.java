@@ -12,7 +12,6 @@ import com.maats.tutorialmod.net.TutorialStepPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.FloatTag;
@@ -21,8 +20,7 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Display;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.TagValueInput;
 
@@ -32,9 +30,9 @@ import net.minecraft.world.level.storage.TagValueInput;
  */
 public final class TutorialClientState {
 
-    /** Schaalgroei van item displays: een blok-item is standaard 1/4 blok groot. */
-    private static final float GHOST_SCALE = 4.0f;
-    private static final float WRONG_SCALE = 4.08f;
+    /** BlockDisplays renderen blokmodellen 1:1. */
+    private static final float GHOST_SCALE = 1.0f;
+    private static final float WRONG_SCALE = 1.02f;
     /** Veiligheidslimiet op het aantal gelijktijdige ghosts. */
     private static final int MAX_GHOSTS = 4000;
 
@@ -135,7 +133,7 @@ public final class TutorialClientState {
             wrong.addAll(newWrong);
             clearWrong();
             for (BlockPos pos : wrong) {
-                spawnDisplay(pos, Items.RED_STAINED_GLASS, WRONG_SCALE, wrongIds);
+                spawnDisplay(pos, RED_GLASS_TAG, WRONG_SCALE, wrongIds);
             }
         }
 
@@ -163,11 +161,7 @@ public final class TutorialClientState {
             if (world == expected || wrong.contains(e.pos())) {
                 continue; // al correct geplaatst, of er staat al iets fouts
             }
-            Item item = expected.getBlock().asItem();
-            if (item == Items.AIR) {
-                continue;
-            }
-            int id = spawnDisplay(e.pos(), item, GHOST_SCALE, null);
+            int id = spawnDisplay(e.pos(), e.stateTag(), GHOST_SCALE, null);
             if (id != -1) {
                 newIds.add(id);
                 spawned++;
@@ -194,16 +188,24 @@ public final class TutorialClientState {
      * Spawnt een client-only item display op de positie van een blok.
      * Deze entiteiten bestaan alleen bij de client en worden niet opgeslagen.
      */
-    private static int spawnDisplay(BlockPos pos, Item item, float scale, List<Integer> extraIds) {
+    /** NBT voor de rode foutmarkering (translucent glas). */
+    private static final CompoundTag RED_GLASS_TAG =
+            net.minecraft.nbt.NbtUtils.writeBlockState(Blocks.RED_STAINED_GLASS.defaultBlockState());
+
+    /**
+     * Spawnt een client-only block display met de verwachte blockstate.
+     * Deze entiteit bestaat alleen bij de client en wordt niet opgeslagen.
+     */
+    private static int spawnDisplay(BlockPos pos, CompoundTag stateTag, float scale, List<Integer> extraIds) {
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
         if (level == null) {
             return -1;
         }
-        Display.ItemDisplay display = new Display.ItemDisplay(EntityType.ITEM_DISPLAY, level);
+        Display.BlockDisplay display = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, level);
 
         CompoundTag tag = new CompoundTag();
-        tag.putString("id", "minecraft:item_display");
+        tag.putString("id", "minecraft:block_display");
 
         ListTag posTag = new ListTag();
         posTag.add(DoubleTag.valueOf(pos.getX() + 0.5));
@@ -211,11 +213,8 @@ public final class TutorialClientState {
         posTag.add(DoubleTag.valueOf(pos.getZ() + 0.5));
         tag.put("Pos", posTag);
 
-        CompoundTag itemTag = new CompoundTag();
-        itemTag.putString("id", BuiltInRegistries.ITEM.getKey(item).toString());
-        itemTag.putByte("count", (byte) 1);
-        tag.put("item", itemTag);
-        tag.putString("item_display", "none");
+        // Waterdicht formaat: {Name: "minecraft:dirt", Properties: {...}}
+        tag.put("block_state", stateTag.copy());
 
         CompoundTag transformation = new CompoundTag();
         transformation.put("translation", vec3(0f, 0f, 0f));
@@ -225,8 +224,8 @@ public final class TutorialClientState {
         tag.put("transformation", transformation);
 
         CompoundTag brightness = new CompoundTag();
-        brightness.putByte("sky", (byte) 15);
-        brightness.putByte("block", (byte) 15);
+        brightness.putInt("sky", 15);
+        brightness.putInt("block", 15);
         tag.put("brightness", brightness);
 
         tag.putFloat("view_range", 1.5f);
